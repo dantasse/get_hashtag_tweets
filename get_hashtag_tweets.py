@@ -26,15 +26,18 @@ if not args.hashtag.startswith('#'):
 
 statuses = []
 max_id = None
-while len(statuses) < 1000:
+for i in range(10): # retrieve max 10 * 100 tweets
     if not max_id:
         results=twitter.search(q=args.hashtag, count=100)
     else:
         results=twitter.search(q=args.hashtag, count=100, max_id=max_id)
     statuses += results['statuses']
-    max_id = min(r['id'] for r in results['statuses'])
+    if len(results['statuses']) == 0:
+        break
+    else:
+        max_id = min(r['id'] for r in results['statuses']) - 1
+        print len(statuses)
     time.sleep(1)
-    print len(statuses)
 
 if not args.outfile:
     args.outfile = args.hashtag.strip('#') + '.json'
