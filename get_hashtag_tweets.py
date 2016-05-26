@@ -2,10 +2,11 @@
 
 # Given a hashtag, get all the tweets, stuff them in a json.
 
-import argparse, csv, collections, json, twython, ConfigParser
+import argparse, csv, collections, json, twython, ConfigParser, time
 parser = argparse.ArgumentParser()
 parser.add_argument('--config_file', default='config.txt')
 parser.add_argument('--hashtag', default='chi2016')
+parser.add_argument('--outfile')
 args = parser.parse_args()
 
 config = ConfigParser.ConfigParser()
@@ -23,4 +24,18 @@ twitter = twython.Twython(config.get('twitter', 'app_key'),
 if not args.hashtag.startswith('#'):
     args.hashtag = '#' + args.hashtag
 
-results=twitter.search(q=args.hashtag)
+statuses = []
+max_id = None
+while len(statuses) < 1000:
+    if not max_id:
+        results=twitter.search(q=args.hashtag, count=100)
+    else:
+        results=twitter.search(q=args.hashtag, count=100, max_id=max_id)
+    statuses += results['statuses']
+    max_id = min(r['id'] for r in results['statuses'])
+    time.sleep(1)
+    print len(statuses)
+
+if not args.outfile:
+    args.outfile = args.hashtag.strip('#') + '.json'
+json.dump(statuses, open(args.outfile, 'w'), indent=2)
